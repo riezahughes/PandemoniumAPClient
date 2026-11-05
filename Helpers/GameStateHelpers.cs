@@ -2,6 +2,8 @@ using Archipelago.Core;
 using Serilog;
 using Helpers;
 using Archipelago.Core.Models;
+using Archipelago.Core.Util;
+using PandemoniumArchipelago;
 
 namespace Helpers
 {
@@ -9,7 +11,13 @@ namespace Helpers
     {
         internal static bool CheckCreditsCondition(ArchipelagoClient client)
         {
-            return true;
+            ushort creditsFind = Memory.ReadByte(Addresses.CreditsAddress);
+            if (creditsFind == 10)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         internal static bool CheckSpellbookPageCondition(ArchipelagoClient client)
