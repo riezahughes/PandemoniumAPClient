@@ -10,7 +10,7 @@ using Archipelago.Core.Models;
 using Archipelago.Core.Util;
 using Archipelago.Core.Util.Overlay;
 using Archipelago.Core.Util.PlatformMemory;
-using ClientTemplate;
+using PandemoniumArchipelago;
 using Helpers;
 using Kokuban;
 using Microsoft.Extensions.Configuration;

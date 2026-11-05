@@ -26,12 +26,12 @@ jobs:
         run: dotnet publish -f net8.0 -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:EnableCompressionInSingleFile=true -o ./publish
 
       - name: Rename File
-        run: mv ./publish/ClientTemplate.exe ./publish/ClientTemplate_${{ github.ref_name }}_x64.exe
+        run: mv ./publish/PandemoniumArchipelago.exe ./publish/PandemoniumArchipelago_${{ github.ref_name }}_x64.exe
 
       - name: Publish an artifact
         uses: softprops/action-gh-release@v2
         with:
-          files: "./publish/ClientTemplate_${{ github.ref_name }}_x64.exe"
+          files: "./publish/PandemoniumArchipelago_${{ github.ref_name }}_x64.exe"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -59,11 +59,11 @@ jobs:
       - name: Zip client
         run: |
             cd ./publish
-            zip -r ClientTemplate_${{ github.ref_name }}_${{ matrix.rid }}.zip ClientTemplate
+            zip -r PandemoniumArchipelago_${{ github.ref_name }}_${{ matrix.rid }}.zip PandemoniumArchipelago
 
       - name: Publish new client
         uses: softprops/action-gh-release@v2
         with:
-          files: "./publish/ClientTemplate_${{ github.ref_name }}_${{ matrix.rid }}.zip"
+          files: "./publish/PandemoniumArchipelago_${{ github.ref_name }}_${{ matrix.rid }}.zip"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -2,7 +2,7 @@ using System.Net;
 using System.Xml.Linq;
 using Archipelago.Core;
 using Archipelago.Core.Models;
-using ClientTemplate;
+using PandemoniumArchipelago;
 using Serilog;
 
 namespace Helpers
