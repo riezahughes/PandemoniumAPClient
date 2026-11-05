@@ -16,8 +16,10 @@ using Kokuban;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 
-internal class Program
+public class App
 {
+
+    public static int ProcessedItemIndex = 0;
     // must match the game name in your ap world
     public const string GameName = "Pandemonium";
 
@@ -64,7 +66,7 @@ internal class Program
             .WriteTo.Console()
             .CreateLogger();
         Console.OutputEncoding = Encoding.UTF8;
-        Console.Title = $"{GameName} Archipelago Client";
+        Console.Title = $"🧙‍♂️{GameName} Archipelago Client";
 
         // Connection details
         string url;
@@ -159,7 +161,7 @@ internal class Program
         // start AP Login
 
         Console.WriteLine("Enter AP Domain: (archipelago.gg)");
-        string? lineUrl = Console.ReadLine();
+        string? lineUrl = Console.ReadLine();+
 
         url = string.IsNullOrWhiteSpace(lineUrl) ? "archipelago.gg" : lineUrl;
 

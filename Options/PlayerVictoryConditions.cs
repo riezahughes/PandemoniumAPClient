@@ -1,10 +1,12 @@
+using System.Net.NetworkInformation;
+
 namespace Helpers
 {
     class PlayerVictoryConditions
     {
-        public static int VICTORY_1 = 0;
-        public static int VICTORY_2 = 1;
+        public static int CREDITS = 0;
+        public static int SPELL_PAGES = 1;
 
-        public static int VICTORY_3 = 1;
+        public static int BOTH = 2;
     }
 }

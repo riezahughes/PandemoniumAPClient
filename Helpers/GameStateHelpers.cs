@@ -7,13 +7,17 @@ namespace Helpers
 {
     public class GameStateHelpers
     {
-        internal static bool CheckFirstWinCondition(ArchipelagoClient client)
+        internal static bool CheckCreditsCondition(ArchipelagoClient client)
         {
             return true;
         }
 
-        internal static bool CheckSecondWinCondition(ArchipelagoClient client) {
-            return true;
+        internal static bool CheckSpellbookPageCondition(ArchipelagoClient client)
+        {
+
+            int tailCount = client.CurrentSession.Items.AllItemsReceived.Count(item => item.ItemName.Contains("Spellbook Pages"));
+            int maxCount = PlayerStateHelpers.GetPlayerOptionCounts(client.Options, "spellpages");
+            return tailCount >= maxCount;
         }
 
         public static bool CheckGoalCondition(ArchipelagoClient client)
@@ -28,17 +32,23 @@ namespace Helpers
 
             int goalCondition = Int32.Parse(client.Options?.GetValueOrDefault("goal", "0").ToString() ?? "0");
 
-            if (goalCondition == PlayerVictoryConditions.VICTORY_1)
+            if (goalCondition == PlayerVictoryConditions.CREDITS)
             {
                 Console.WriteLine("Cleared 1");
                 return true;
             }
-            else if (goalCondition == PlayerVictoryConditions.VICTORY_2)
+            else if (goalCondition == PlayerVictoryConditions.SPELL_PAGES)
             {
-                Console.WriteLine("Cleared 2");
-                return true;
+                bool cleared = CheckSpellbookPageCondition(client);
+
+                if (cleared == true)
+                {
+                    client.SendGoalCompletion();
+                    return true;
+                }
+                return false;
             }
-            else if (goalCondition == PlayerVictoryConditions.VICTORY_3)
+            else if (goalCondition == PlayerVictoryConditions.BOTH)
             {
                 Console.WriteLine("Cleared 1 and 2");
                 return true;

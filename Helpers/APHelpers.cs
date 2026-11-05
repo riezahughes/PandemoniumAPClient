@@ -8,6 +8,8 @@ namespace Helpers
 {
     public class APHelpers
     {
+
+        public static bool PROCESSING_ITEM_LIST = false;
         public static Boolean isInTheGame()
         {
 
@@ -58,7 +60,8 @@ namespace Helpers
             {
                 return;
             }
-            Console.WriteLine("Item Received");
+            PROCESSING_ITEM_LIST = true;
+            ItemHelpers.ProcessPendingItems(client);
         }
 
         public static void Client_MessageReceivedLogic(object? sender, MessageReceivedEventArgs e, ArchipelagoClient client, string slot)
@@ -72,7 +75,7 @@ namespace Helpers
             var message = string.Join("", e.Message.Parts.Select(p => p.Text));
 
             // sends the message to the in-game overlay. Only does anything if Program.OverlayEnabled is true (see App.cs)
-            if (Program.OverlayEnabled && OperatingSystem.IsWindows())
+            if (App.OverlayEnabled && OperatingSystem.IsWindows())
             {
                 client.AddOverlayMessage(e.Message.ToString());
             }
