@@ -12,9 +12,6 @@ namespace Helpers
         public static bool PROCESSING_ITEM_LIST = false;
         public static Boolean isInTheGame()
         {
-
-            // ulong currentGameStatus = Memory.ReadUInt(Addresses.InGameCheck);
-            // TODO: check values in here against the game
             return true;
         }
 
@@ -38,7 +35,7 @@ namespace Helpers
 
             if (isInTheGame())
             {
-                // if you are booting and already in the game, run any reset functions
+                return;
             }
         }
 

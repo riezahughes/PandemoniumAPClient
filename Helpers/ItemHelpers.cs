@@ -17,6 +17,10 @@ namespace Helpers
                 return PlayerStateHelpers.UpdatePlayerCurrentHealth(client);
             else if (item.ItemName.Contains("Transformation Unlock"))
                 return PlayerStateHelpers.UpdatePlayerTransformations(client);
+            else if (item.ItemName.Contains("Extra Life"))
+            {
+                return PlayerStateHelpers.UpdatePlayerLives(client);
+            }
             else if (item.ItemName.Contains("Fargus") || item.ItemName.Contains("Nikki"))
             {
                 return PlayerStateHelpers.UpdatePlayerUnlocks(client);

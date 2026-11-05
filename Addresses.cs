@@ -9,5 +9,6 @@ namespace PandemoniumArchipelago
         public const uint WeaponArray1 = test;
         public const uint ItemIndexStorage = test;
         public const uint CreditsAddress = 0x00093b55;
+        public const uint PlayerLives = 0x00093118;
     }
 }

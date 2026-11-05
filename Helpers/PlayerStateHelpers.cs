@@ -1,5 +1,7 @@
 using Archipelago.Core;
+using Archipelago.Core.Util;
 using Archipelago.MultiClient.Net.Models;
+using PandemoniumArchipelago;
 
 namespace Helpers
 {
@@ -71,8 +73,21 @@ namespace Helpers
         }
         public static bool UpdatePlayerLives(ArchipelagoClient client)
         {
+            byte currentLives = Memory.ReadByte(Addresses.PlayerLives);
+
+            int newLifeTotal = currentLives + 1;
+
+            if (newLifeTotal >= 32)
+            {
+                Console.WriteLine("Lives have capped out!");
+
+                newLifeTotal = 31;
+            }
+
+            Memory.WriteByte(Addresses.PlayerLives, (byte)newLifeTotal);
             return true;
         }
+
         public static bool UpdatePlayerSpellPages(ArchipelagoClient client)
         {
             return true;
