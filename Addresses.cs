@@ -19,5 +19,6 @@ namespace PandemoniumArchipelago
         public const uint LevelMaxChoice = 0x00097392; // byte
         public const uint LevelSelectState = 0x00097392; // ushort: low byte = max choice (0x15), high byte = level choice (0 = none)
         public const uint HasStartedGame = 0x00701659; // byte
+        public const uint LevelCoinPointCollectedCount = 0x00111728;
     }
 }
