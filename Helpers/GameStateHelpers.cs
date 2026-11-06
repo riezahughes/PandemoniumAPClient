@@ -4,6 +4,7 @@ using Helpers;
 using Archipelago.Core.Models;
 using Archipelago.Core.Util;
 using PandemoniumArchipelago;
+using Archipelago.MultiClient.Net.Models;
 
 namespace Helpers
 {
@@ -64,5 +65,72 @@ namespace Helpers
             return false;
         }
 
+        public static void SetUpLevelSelectListener(CancellationTokenSource cts, ArchipelagoClient client)
+        {
+            if (cts.Token.IsCancellationRequested) return;
+
+            Console.WriteLine("!!!");
+
+            // Halfword at LevelSelectState: 0x0015 = no choice made (max 0x15, choice 0).
+            Memory.MonitorAddressForAction<ushort>(
+                Addresses.LevelSelectState,
+                () =>
+                {
+                    try
+                    {
+                        // The chosen level is the high byte of the halfword (0x0115: 01 = level, 15 = max choice)
+                        int currentLevel = Memory.ReadByte(Addresses.LevelChoice);
+
+                        var received = client.CurrentSession?.Items.AllItemsReceived;
+
+                        bool hasKey = false;
+                        if (LocationHelpers.LevelToKeyName.TryGetValue(currentLevel, out string? keyName))
+                        {
+                            Console.WriteLine($"Level {currentLevel} needs key: {keyName}");
+                            hasKey = client.CurrentSession?.Items.AllItemsReceived
+                                .Any(item => item.ItemName == keyName) ?? false;
+                        }
+
+                        if (!hasKey)
+                        {
+                            // Locked: cancel the choice. Must be a ushort write, a bare int literal writes 4 bytes.
+                            Memory.Write(Addresses.LevelSelectState, 0x0015);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Level select check failed");
+                    }
+                    finally
+                    {
+                        // An unlocked choice stays non-zero, so wait for it to clear before re-arming
+                        // or the monitor would retrigger straight away.
+                        while (!cts.Token.IsCancellationRequested
+                               && Memory.ReadShort(Addresses.LevelSelectState) != 0x0015)
+                        {
+                            Thread.Sleep(100);
+                        }
+
+                        SetUpLevelSelectListener(cts, client);
+                    }
+
+                }, value => value != 0x0015);
+        }
+
+        public static void SetUpMapListener(CancellationTokenSource cts, ArchipelagoClient client)
+        {
+            if (cts.Token.IsCancellationRequested) return;
+
+            Memory.MonitorAddressForAction<byte>(
+                Addresses.HasStartedGame,
+                () =>
+                {
+                    // Console.WriteLine("Checking level");
+                    Memory.WriteByte(Addresses.LevelMaxChoice, 0x15);
+                    Thread.Sleep(1000);
+                    SetUpMapListener(cts, client);
+
+                }, value => value == 0x00);
+        }
     }
 }

@@ -3,6 +3,9 @@ using Serilog;
 using Helpers;
 using Archipelago.Core.Models;
 using Kokuban;
+using System.Buffers;
+using Archipelago.Core.Util;
+using PandemoniumArchipelago;
 
 namespace Helpers
 {
@@ -12,7 +15,14 @@ namespace Helpers
         public static bool PROCESSING_ITEM_LIST = false;
         public static Boolean isInTheGame()
         {
-            return true;
+            byte state = Memory.ReadByte(Addresses.BiosLoaded);
+
+            if (state == 0x80)
+            {
+                return true;
+
+            }
+            return false;
         }
 
         public static async void OnConnectedLogic(object? sender, EventArgs args, ArchipelagoClient client)

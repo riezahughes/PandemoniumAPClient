@@ -56,7 +56,7 @@ namespace Helpers
             { "Efreet Palace Unlock", 18},
             { "Frozen Cavern Unlock", 19},
             { "Storm Temple Unlock", 20}
-        };        
+        };
         // buildLocationsList returns a list of all the valid locations that you need to read from the game
         // while also taking into account what the addresses have to match in order to send out a location.
         // the ID's here must match the ID's in your ap world.
@@ -132,7 +132,7 @@ namespace Helpers
             {
 
                 long currentRegionBaseId = base_id + regional_index * region_offset;
-                    
+
                 if (allLevelLocations.ContainsKey(region_name))
                 {
                     // Retrieve the list of locations for the current region
@@ -148,7 +148,8 @@ namespace Helpers
                         List<ILocation> treasureCheck = new List<ILocation>();
                         List<ILocation> finalStatement = new List<ILocation>();
 
-                        if(loc.Name.ToLower().Contains("Percent Cleared")){
+                        if (loc.Name.ToLower().Contains("Percent Cleared"))
+                        {
                             conditionalChoice.Add(new Location()
                             {
                                 Id = -1,
@@ -157,7 +158,7 @@ namespace Helpers
                                 CheckType = LocationCheckType.Byte,
                                 CompareType = LocationCheckCompareType.Match,
                                 CheckValue = loc.LevelId
-                            }); 
+                            });
 
 
 
@@ -180,7 +181,7 @@ namespace Helpers
                                 CompareType = LocationCheckCompareType.GreaterThan,
                                 CheckValue = loc.Check
                             });
-                                                        
+
                             CompositeLocation treasureLocationChoice = new CompositeLocation()
                             {
                                 Name = "Character Clear",
@@ -188,7 +189,7 @@ namespace Helpers
                                 CheckType = LocationCheckType.OR,
                                 Conditions = treasureCheck
                             };
-                            
+
 
                             finalStatement.Add(treasureLocationChoice);
                             finalStatement.Add(conditionalChoice[0]);
@@ -204,7 +205,7 @@ namespace Helpers
 
 
                             location_index++;
-                            continue;                                
+                            continue;
 
                         }
 
@@ -218,7 +219,7 @@ namespace Helpers
                                 CheckType = LocationCheckType.Byte,
                                 CompareType = LocationCheckCompareType.Match,
                                 CheckValue = loc.LevelId
-                            }); 
+                            });
                             conditionalChoice.Add(new Location()
                             {
                                 Id = -1,
@@ -227,7 +228,7 @@ namespace Helpers
                                 CheckType = LocationCheckType.Byte,
                                 CompareType = LocationCheckCompareType.Match,
                                 CheckValue = loc.Check
-                            }); 
+                            });
 
                             CompositeLocation location = new CompositeLocation()
                             {
@@ -238,9 +239,9 @@ namespace Helpers
                             };
 
                             location_index++;
-                            continue;                                                
+                            continue;
 
-                        }                   
+                        }
 
                         if (loc.Name.ToLower().Contains("Cleared".ToLower()))
                         {
@@ -255,7 +256,7 @@ namespace Helpers
                                 CheckType = LocationCheckType.Byte,
                                 CompareType = LocationCheckCompareType.Match,
                                 CheckValue = loc.LevelId
-                            }); 
+                            });
 
                             conditionalChoice.Add(new Location()
                             {
@@ -265,9 +266,10 @@ namespace Helpers
                                 CheckType = LocationCheckType.Byte,
                                 CompareType = LocationCheckCompareType.Match,
                                 CheckValue = "1"
-                            }); 
-                            
-                            if(!options.ContainsKey("includeCharacterLocations")){
+                            });
+
+                            if (!options.ContainsKey("includeCharacterLocations"))
+                            {
                                 conditionalChoice.Add(new Location()
                                 {
                                     Id = -1,
@@ -291,19 +293,20 @@ namespace Helpers
                             continue;
                         }
 
-                    }                        {
+                    }
+                    {
 #if DEBUG
-                            //Console.WriteLine($"Could not add {loc.Name}, id: {loc.Id}");
+                        //Console.WriteLine($"Could not add {loc.Name}, id: {loc.Id}");
 #endif
-                            location_index++;
-                        }
+                        location_index++;
+                    }
                 }
 
                 regional_index++;
             }
-            return locations; 
+            return locations;
         }
-    
+
         // TODO: every location below uses Addresses.test as a placeholder. Swap in the real address, level id and check value
         // for each one. The order of every list must match the apworld's Locations.py exactly, because the ID is
         // base_id + (region index * region_offset) + position in the list.

@@ -278,6 +278,9 @@ public class App
 
             gameOverlay?.AddTextPopup($"{GameName} is ready to go.");
 
+            GameStateHelpers.SetUpLevelSelectListener(cancellationTokenSource, archipelagoClient);
+            // GameStateHelpers.SetUpMapListener(cancellationTokenSource, archipelagoClient);
+
             // underscore runs the monitor locations task in the background. You can change _= to await if you want to watch it more directly.
             _ = archipelagoClient.MonitorLocationsAsync(GameLocations);
 
