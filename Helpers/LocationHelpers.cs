@@ -132,6 +132,8 @@ namespace Helpers
             bool multiClear = GetOption(options, "multiclear", 0) == 1;
             bool levelPercentage = GetOption(options, "level_percentage", 0) == 1;
             int percentageStep = GetOption(options, "level_percentage_range", 20);
+            bool pointSanity = GetOption(options, "pointsanity", 0) == 1;
+            int pointStep = GetOption(options, "pointsanity_range", 50);
 
             var regional_index = 0;
 
@@ -182,6 +184,51 @@ namespace Helpers
                                 NibblePosition = NibblePosition.Lower, // only read for Nibble checks (the fungus bombs)
                                 CompareType = LocationCheckCompareType.Match,
                                 CheckValue = loc.Check
+                            });
+
+                            locations.Add(new CompositeLocation()
+                            {
+                                Name = loc.Name,
+                                Id = locationId,
+                                CheckType = LocationCheckType.AND,
+                                Conditions = conditionalChoice
+                            });
+                            continue;
+                        }
+
+                        if (loc.Name.EndsWith(" Points Collected"))
+                        {
+                            // Pointsanity: only the break points pointsanity_range produces exist in the apworld
+                            if (!pointSanity)
+                                continue;
+
+                            int points = int.Parse(loc.Check);
+                            if (!PercentageThresholds(pointStep, PointMaximums[region_name]).Contains(points))
+                                continue;
+
+                            // a byte counter can't reach these, so there's nothing to check until the level has a wider address
+                            if (loc.CheckType == LocationCheckType.Byte && points > byte.MaxValue)
+                                continue;
+
+                            conditionalChoice.Add(new Location()
+                            {
+                                Id = -1,
+                                Name = "Level ID",
+                                Address = Addresses.LevelId,
+                                CheckType = LocationCheckType.Byte,
+                                CompareType = LocationCheckCompareType.Match,
+                                CheckValue = loc.LevelId
+                            });
+
+                            // at least this many points
+                            conditionalChoice.Add(new Location()
+                            {
+                                Id = -1,
+                                Name = "Points Reached",
+                                Address = loc.Address,
+                                CheckType = loc.CheckType,
+                                CompareType = LocationCheckCompareType.GreaterThan,
+                                CheckValue = (points - 1).ToString()
                             });
 
                             locations.Add(new CompositeLocation()
@@ -368,6 +415,37 @@ namespace Helpers
             return thresholds;
         }
 
+        // matches POINT_MAXIMUMS in the apworld: the most treasure points in each level (boss levels have no point checks)
+        private static readonly Dictionary<string, int> PointMaximums = new Dictionary<string, int>
+        {
+            { "Skull Fortress", 150 }, { "Hollow Stairway", 150 }, { "Dungeon Tower", 150 }, { "Lost Caves", 150 },
+            { "Fungus Grotto", 250 }, { "Acid Pools", 250 }, { "Burning Desert", 250 }, { "Branky Wastes", 250 },
+            { "Spider Forest", 250 }, { "Canopy Village", 250 }, { "Soldier Barracks", 250 }, { "Honcho's Logmill", 250 },
+            { "Honcho's Airship", 350 }, { "Dragoon Skyfort", 350 }, { "Cloud Citadel", 350 }, { "Efreet Palace", 350 },
+            { "Frozen Cavern", 350 }, { "Storm Temple", 350 },
+        };
+
+        // where each level's collected treasure points are read from. Only the Skull Fortress part 1 address is known so far,
+        // so every level uses it until its own address is found.
+        private static readonly Dictionary<string, (uint Address, LocationCheckType CheckType)> PointAddresses = new Dictionary<string, (uint, LocationCheckType)>
+        {
+            { "Skull Fortress", (Addresses.LevelCoinPointCollectedCount, LocationCheckType.Byte) },
+        };
+
+        // the apworld appends 1 point up to the level's maximum for every non-boss level, last in the region
+        private static List<GenericLocationData> GetPointsData(string levelName)
+        {
+            string levelId = KeyToLevelNumber[$"{levelName} Unlock"].ToString();
+            var (address, checkType) = PointAddresses.GetValueOrDefault(levelName, (Addresses.LevelCoinPointCollectedCount, LocationCheckType.Byte));
+
+            List<GenericLocationData> pointLocations = new List<GenericLocationData>();
+            for (int points = 1; points <= PointMaximums[levelName]; points++)
+            {
+                pointLocations.Add(new GenericLocationData($"{levelName}: {points} Points Collected", address, levelId, points.ToString(), checkType));
+            }
+            return pointLocations;
+        }
+
         // the apworld appends a Fargus and a Nikki clear for each level clear, after the region's other locations
         private static List<GenericLocationData> GetCharacterClearData(string levelName)
         {
@@ -405,6 +483,7 @@ namespace Helpers
             skullFortressLocations.AddRange(GetCharacterClearData("Skull Fortress"));
             skullFortressLocations.AddRange(GetPercentageClearData("Skull Fortress"));
             skullFortressLocations.AddRange(GetSkullFortressEnemyData());
+            skullFortressLocations.AddRange(GetPointsData("Skull Fortress"));
             return skullFortressLocations;
         }
 
@@ -419,6 +498,7 @@ namespace Helpers
             hollowStairwayLocations.AddRange(GetCharacterClearData("Hollow Stairway"));
             hollowStairwayLocations.AddRange(GetPercentageClearData("Hollow Stairway"));
             hollowStairwayLocations.AddRange(GetHollowStairwayEnemyData());
+            hollowStairwayLocations.AddRange(GetPointsData("Hollow Stairway"));
             return hollowStairwayLocations;
         }
 
@@ -433,6 +513,7 @@ namespace Helpers
             dungeonTowerLocations.AddRange(GetCharacterClearData("Dungeon Tower"));
             dungeonTowerLocations.AddRange(GetPercentageClearData("Dungeon Tower"));
             dungeonTowerLocations.AddRange(GetDungeonTowerEnemyData());
+            dungeonTowerLocations.AddRange(GetPointsData("Dungeon Tower"));
             return dungeonTowerLocations;
         }
 
@@ -447,6 +528,7 @@ namespace Helpers
             lostCavesLocations.AddRange(GetCharacterClearData("Lost Caves"));
             lostCavesLocations.AddRange(GetPercentageClearData("Lost Caves"));
             lostCavesLocations.AddRange(GetLostCavesEnemyData());
+            lostCavesLocations.AddRange(GetPointsData("Lost Caves"));
             return lostCavesLocations;
         }
 
@@ -462,6 +544,7 @@ namespace Helpers
             fungusGrottoLocations.AddRange(GetCharacterClearData("Fungus Grotto"));
             fungusGrottoLocations.AddRange(GetPercentageClearData("Fungus Grotto"));
             fungusGrottoLocations.AddRange(GetFungusGrottoEnemyData());
+            fungusGrottoLocations.AddRange(GetPointsData("Fungus Grotto"));
             return fungusGrottoLocations;
         }
 
@@ -477,6 +560,7 @@ namespace Helpers
             acidPoolsLocations.AddRange(GetCharacterClearData("Acid Pools"));
             acidPoolsLocations.AddRange(GetPercentageClearData("Acid Pools"));
             acidPoolsLocations.AddRange(GetAcidPoolsEnemyData());
+            acidPoolsLocations.AddRange(GetPointsData("Acid Pools"));
             return acidPoolsLocations;
         }
 
@@ -501,6 +585,7 @@ namespace Helpers
             burningDesertLocations.AddRange(GetCharacterClearData("Burning Desert"));
             burningDesertLocations.AddRange(GetPercentageClearData("Burning Desert"));
             burningDesertLocations.AddRange(GetBurningDesertEnemyData());
+            burningDesertLocations.AddRange(GetPointsData("Burning Desert"));
             return burningDesertLocations;
         }
 
@@ -516,6 +601,7 @@ namespace Helpers
             brankyWastesLocations.AddRange(GetCharacterClearData("Branky Wastes"));
             brankyWastesLocations.AddRange(GetPercentageClearData("Branky Wastes"));
             brankyWastesLocations.AddRange(GetBrankyWastesEnemyData());
+            brankyWastesLocations.AddRange(GetPointsData("Branky Wastes"));
             return brankyWastesLocations;
         }
 
@@ -530,6 +616,7 @@ namespace Helpers
             spiderForestLocations.AddRange(GetCharacterClearData("Spider Forest"));
             spiderForestLocations.AddRange(GetPercentageClearData("Spider Forest"));
             spiderForestLocations.AddRange(GetSpiderForestEnemyData());
+            spiderForestLocations.AddRange(GetPointsData("Spider Forest"));
             return spiderForestLocations;
         }
 
@@ -545,6 +632,7 @@ namespace Helpers
             canopyVillageLocations.AddRange(GetCharacterClearData("Canopy Village"));
             canopyVillageLocations.AddRange(GetPercentageClearData("Canopy Village"));
             canopyVillageLocations.AddRange(GetCanopyVillageEnemyData());
+            canopyVillageLocations.AddRange(GetPointsData("Canopy Village"));
             return canopyVillageLocations;
         }
 
@@ -558,6 +646,7 @@ namespace Helpers
             };
             soldierBarracksLocations.AddRange(GetCharacterClearData("Soldier Barracks"));
             soldierBarracksLocations.AddRange(GetPercentageClearData("Soldier Barracks"));
+            soldierBarracksLocations.AddRange(GetPointsData("Soldier Barracks"));
             return soldierBarracksLocations;
         }
 
@@ -572,6 +661,7 @@ namespace Helpers
             honchosLogmillLocations.AddRange(GetCharacterClearData("Honcho's Logmill"));
             honchosLogmillLocations.AddRange(GetPercentageClearData("Honcho's Logmill"));
             honchosLogmillLocations.AddRange(GetHonchosLogmillEnemyData());
+            honchosLogmillLocations.AddRange(GetPointsData("Honcho's Logmill"));
             return honchosLogmillLocations;
         }
 
@@ -597,6 +687,7 @@ namespace Helpers
             honchosAirshipLocations.AddRange(GetCharacterClearData("Honcho's Airship"));
             honchosAirshipLocations.AddRange(GetPercentageClearData("Honcho's Airship"));
             honchosAirshipLocations.AddRange(GetHonchosAirshipEnemyData());
+            honchosAirshipLocations.AddRange(GetPointsData("Honcho's Airship"));
             return honchosAirshipLocations;
         }
 
@@ -611,6 +702,7 @@ namespace Helpers
             dragoonSkyfortLocations.AddRange(GetCharacterClearData("Dragoon Skyfort"));
             dragoonSkyfortLocations.AddRange(GetPercentageClearData("Dragoon Skyfort"));
             dragoonSkyfortLocations.AddRange(GetDragoonSkyfortEnemyData());
+            dragoonSkyfortLocations.AddRange(GetPointsData("Dragoon Skyfort"));
             return dragoonSkyfortLocations;
         }
 
@@ -625,6 +717,7 @@ namespace Helpers
             cloudCitadelLocations.AddRange(GetCharacterClearData("Cloud Citadel"));
             cloudCitadelLocations.AddRange(GetPercentageClearData("Cloud Citadel"));
             cloudCitadelLocations.AddRange(GetCloudCitadelEnemyData());
+            cloudCitadelLocations.AddRange(GetPointsData("Cloud Citadel"));
             return cloudCitadelLocations;
         }
 
@@ -639,6 +732,7 @@ namespace Helpers
             efreetPalaceLocations.AddRange(GetCharacterClearData("Efreet Palace"));
             efreetPalaceLocations.AddRange(GetPercentageClearData("Efreet Palace"));
             efreetPalaceLocations.AddRange(GetEfreetPalaceEnemyData());
+            efreetPalaceLocations.AddRange(GetPointsData("Efreet Palace"));
             return efreetPalaceLocations;
         }
 
@@ -653,6 +747,7 @@ namespace Helpers
             frozenCavernLocations.AddRange(GetCharacterClearData("Frozen Cavern"));
             frozenCavernLocations.AddRange(GetPercentageClearData("Frozen Cavern"));
             frozenCavernLocations.AddRange(GetFrozenCavernEnemyData());
+            frozenCavernLocations.AddRange(GetPointsData("Frozen Cavern"));
             return frozenCavernLocations;
         }
 
@@ -667,6 +762,7 @@ namespace Helpers
             stormTempleLocations.AddRange(GetCharacterClearData("Storm Temple"));
             stormTempleLocations.AddRange(GetPercentageClearData("Storm Temple"));
             stormTempleLocations.AddRange(GetStormTempleEnemyData());
+            stormTempleLocations.AddRange(GetPointsData("Storm Temple"));
             return stormTempleLocations;
         }
 
