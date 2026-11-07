@@ -25,7 +25,7 @@ namespace Helpers
             {
                 return PlayerStateHelpers.UpdatePlayerUnlocks(client);
             }
-            else if (WeaponBitflags.Keys.FirstOrDefault(itm => item.ItemName.Contains(itm)) is string match)
+            else if (Weapons.Keys.FirstOrDefault(itm => item.ItemName.Contains(itm)) is string match)
             {
                 GiveWeapon(match);
                 return true;
@@ -33,7 +33,7 @@ namespace Helpers
 
             else if (item.ItemName.Contains("Spellbook Page"))
             {
-                Console.WriteLine("Recieved Shard!");
+                Console.WriteLine("Recieved Spellbook Page!");
                 return true;
             }
             else if (item.ItemName.Contains("Unlock"))
@@ -50,22 +50,37 @@ namespace Helpers
 
 
 
-        public struct ItemLocation
+        // Pandemonium has no weapon inventory: there is one active power up slot (PowerUpType + PowerUpActive),
+        // and the shield is its own value. Giving a weapon writes its value to its address.
+        public struct WeaponPowerUp
         {
             public uint Address;
-            public int Bit;
+            public ushort Value;
+            public bool IsShort; // false = byte write
+            public bool SetsPowerUpActive; // power ups also need PowerUpActive set to 01
 
-            public ItemLocation(uint address, int bit)
+            public WeaponPowerUp(uint address, ushort value, bool isShort = false, bool setsPowerUpActive = true)
             {
                 Address = address;
-                Bit = bit;
+                Value = value;
+                IsShort = isShort;
+                SetsPowerUpActive = setsPowerUpActive;
             }
         }
 
         public static bool GiveWeapon(string itemName)
         {
-            ItemLocation itemData = WeaponBitflags.GetValueOrDefault(itemName);
-            Memory.WriteBit(itemData.Address, itemData.Bit, true);
+            WeaponPowerUp weapon = Weapons[itemName];
+
+            if (weapon.IsShort)
+                Memory.Write(weapon.Address, weapon.Value);
+            else
+                Memory.WriteByte(weapon.Address, (byte)weapon.Value);
+
+            // set the type before switching the power up on, so the game never sees the old type as active
+            if (weapon.SetsPowerUpActive)
+                Memory.WriteByte(Addresses.PowerUpActive, 0x01);
+
             return true;
         }
 
@@ -108,15 +123,16 @@ namespace Helpers
             APHelpers.PROCESSING_ITEM_LIST = false;
         }
 
-        public static Dictionary<string, ItemLocation> WeaponBitflags = new Dictionary<string, ItemLocation>
+        // the weapon items in the apworld (Items.py, PandemoniumItemCategory.WEAPON)
+        public static Dictionary<string, WeaponPowerUp> Weapons = new Dictionary<string, WeaponPowerUp>
         {
-            // Address 0x12DA3DA
-            { "Shaman's Mask",        new ItemLocation(Addresses.WeaponArray1, 1) },
-            { "Mask of Strength",     new ItemLocation(Addresses.WeaponArray1, 2) },
-            { "Mask of Power",        new ItemLocation(Addresses.WeaponArray1, 3) },
-            { "Shaman's Cloak",       new ItemLocation(Addresses.WeaponArray1, 5) },
-            { "Cloak of Force",       new ItemLocation(Addresses.WeaponArray1, 6) },
-            { "Cloak of Deception",   new ItemLocation(Addresses.WeaponArray1, 7) },
+            // the code notes only list one fireball value (0x00), so both fireballs use it for now
+            { "Eldritch Fireball",    new WeaponPowerUp(Addresses.PowerUpType, 0x00) },
+            { "Phoenix Fireball",     new WeaponPowerUp(Addresses.PowerUpType, 0x00) },
+            { "Freeze Ray",           new WeaponPowerUp(Addresses.PowerUpType, 0x0b) },
+            { "Shrink Ray",           new WeaponPowerUp(Addresses.PowerUpType, 0x0c) },
+            // the shield isn't part of the power up slot; 0xfa68 is what the notes show while it's active
+            { "Invincibility Shield", new WeaponPowerUp(Addresses.ShieldState, 0xfa68, isShort: true, setsPowerUpActive: false) },
         };
     }
 }

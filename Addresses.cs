@@ -6,10 +6,12 @@ namespace PandemoniumArchipelago
 
         public const uint test = 0x00001234;
         public const uint BiosLoaded = 0x001ffffb;
-        public const uint WeaponArray1 = test;
         public const uint ItemIndexStorage = 0x00070EC0;
         public const uint CreditsAddress = 0x00093b55;
         public const uint PlayerLives = 0x00093118;
+        public const uint PowerUpActive = 0x00093120; // byte, 01 = a power up is on, 00 = no power up
+        public const uint PowerUpType = 0x00093122; // byte, 0x00 = fireball, 0x0b = freeze ray, 0x0c = shrink ray (when PowerUpActive = 01)
+        public const uint ShieldState = 0x00093338; // ushort, 0xfa68 while the shield is active
         public const uint LevelScreenState = 0x001ffba6;
         public const uint CharacterChoice = 0x001bcd15;
         public const uint CharacterSelected = 0x001bcd16; // byte, 0 = Nikki, 1 = Fargus

@@ -127,10 +127,11 @@ namespace Helpers
 
             // slot_data always holds every option as 0 or 1, so read the value rather than checking the key exists
             bool enemySanity = GetOption(options, "enemysanity", 0) == 1;
-            bool fullTilt = GetOption(options, "fulltilt", 1) == 1;
-            bool speedGreed = GetOption(options, "speedgreed", 1) == 1;
+            bool fullTilt = GetOption(options, "full_tilt", 1) == 1;
+            bool speedGreed = GetOption(options, "speed_greed", 1) == 1;
             bool multiClear = GetOption(options, "multiclear", 0) == 1;
-            HashSet<int> percentages = PercentageThresholds(GetOption(options, "levelpercentage", 20));
+            bool levelPercentage = GetOption(options, "level_percentage", 0) == 1;
+            int percentageStep = GetOption(options, "level_percentage_range", 20);
 
             var regional_index = 0;
 
@@ -195,7 +196,12 @@ namespace Helpers
 
                         if (loc.Name.Contains(" Percent Cleared: "))
                         {
-                            // only the thresholds the levelpercentage option produces exist in the apworld
+                            // percentage checks only exist when level_percentage is on, and then only at the
+                            // thresholds level_percentage_range produces
+                            if (!levelPercentage)
+                                continue;
+
+                            HashSet<int> percentages = PercentageThresholds(percentageStep, MaxPercentage(region_name));
                             int percentage = int.Parse(loc.Check);
                             if (!percentages.Contains(percentage))
                                 continue;
@@ -337,12 +343,25 @@ namespace Helpers
             return int.Parse(options?.GetValueOrDefault(key, fallback)?.ToString() ?? fallback.ToString());
         }
 
-        // matches percentage_thresholds in the apworld: every multiple of step below 100, then 100 itself
-        private static HashSet<int> PercentageThresholds(int step)
+        // matches MAX_PERCENTAGE_OVERRIDES in the apworld: these levels never go above 95% in game
+        private static readonly Dictionary<string, int> MaxPercentageOverrides = new Dictionary<string, int>
+        {
+            { "Canopy Village", 95 },
+            { "Soldier Barracks", 95 },
+            { "Frozen Cavern", 95 },
+        };
+
+        private static int MaxPercentage(string levelName)
+        {
+            return MaxPercentageOverrides.GetValueOrDefault(levelName, 100);
+        }
+
+        // matches percentage_thresholds in the apworld: every multiple of step below the maximum, then the maximum itself
+        private static HashSet<int> PercentageThresholds(int step, int maximum = 100)
         {
             step = Math.Clamp(step, 1, 100);
-            HashSet<int> thresholds = new HashSet<int>() { 100 };
-            for (int percentage = step; percentage < 100; percentage += step)
+            HashSet<int> thresholds = new HashSet<int>() { maximum };
+            for (int percentage = step; percentage < maximum; percentage += step)
             {
                 thresholds.Add(percentage);
             }

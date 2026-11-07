@@ -25,7 +25,7 @@ namespace Helpers
         {
 
             int tailCount = client.CurrentSession.Items.AllItemsReceived.Count(item => item.ItemName.Contains("Spellbook Pages"));
-            int maxCount = PlayerStateHelpers.GetPlayerOptionCounts(client.Options, "spellpages");
+            int maxCount = PlayerStateHelpers.GetPlayerOptionCounts(client.Options, "spellbook_pages");
             return tailCount >= maxCount;
         }
 
@@ -43,9 +43,15 @@ namespace Helpers
 
             if (goalCondition == PlayerVictoryConditions.CREDITS)
             {
-                Console.WriteLine("Cleared 1");
-                return true;
+                byte creditCheck = Memory.ReadByte(Addresses.CreditsAddress);
+                if(APHelpers.isInTheGame() && creditCheck == 0x10)
+                {
+                    client.SendGoalCompletion();
+                    return true;
+                }
+                return false;
             }
+
             else if (goalCondition == PlayerVictoryConditions.SPELL_PAGES)
             {
                 bool cleared = CheckSpellbookPageCondition(client);
@@ -69,8 +75,6 @@ namespace Helpers
         {
             if (cts.Token.IsCancellationRequested) return;
 
-            Console.WriteLine("!!!");
-
             // Halfword at LevelSelectState: 0x0015 = no choice made (max 0x15, choice 0).
             Memory.MonitorAddressForAction<ushort>(
                 Addresses.LevelSelectState,
@@ -86,7 +90,6 @@ namespace Helpers
                         bool hasKey = false;
                         if (LocationHelpers.LevelToKeyName.TryGetValue(currentLevel, out string? keyName))
                         {
-                            Console.WriteLine($"Level {currentLevel} needs key: {keyName}");
                             hasKey = client.CurrentSession?.Items.AllItemsReceived
                                 .Any(item => item.ItemName == keyName) ?? false;
                         }

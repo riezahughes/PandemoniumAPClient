@@ -112,11 +112,15 @@ namespace Helpers
             {
                 return;
             }
-            Console.WriteLine("Location Completed");
+# if DEBUG            
+            Console.WriteLine($"Location Completed: {e.CompletedLocation.Name}");
+# endif
         }
         public static void Locations_CheckedLocationsUpdated(System.Collections.ObjectModel.ReadOnlyCollection<long> newCheckedLocations)
         {
+# if DEBUG                
             Console.WriteLine($"Location CheckedLocationsUpdated Firing.");
+# endif            
         }
     }
 }
