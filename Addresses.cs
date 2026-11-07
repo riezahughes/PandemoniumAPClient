@@ -1,3 +1,5 @@
+using PandemoniumArchipelago.Models;
+
 namespace PandemoniumArchipelago
 {
     class Addresses
@@ -6,8 +8,11 @@ namespace PandemoniumArchipelago
 
         public const uint test = 0x00001234;
         public const uint BiosLoaded = 0x001ffffb;
-        public const uint ItemIndexStorage = 0x00070EC0;
         public const uint CreditsAddress = 0x00093b55;
+        public const uint PlayerCurrentHealth = 0x0009311a;
+        public const uint DemoCheck = 0x071f56;
+        public const uint MainMenuCheck = 0x001fff1c;
+        public const uint PlayerMaxHealth = 0x093119; // only goes up to 8.
         public const uint PlayerLives = 0x00093118;
         public const uint PowerUpActive = 0x00093120; // byte, 01 = a power up is on, 00 = no power up
         public const uint PowerUpType = 0x00093122; // byte, 0x00 = fireball, 0x0b = freeze ray, 0x0c = shrink ray (when PowerUpActive = 01)
@@ -17,12 +22,95 @@ namespace PandemoniumArchipelago
         public const uint CharacterSelected = 0x001bcd16; // byte, 0 = Nikki, 1 = Fargus
         public const uint LevelId = 0x0007202c;
         public const uint FullTiltAndSpeedGreedCheck = 0x0007207c;
+        public const uint PlayerTotalTreasureCollected = 0x0009311c;
         public const uint TreasureCollectedPercent = 0x001fff3c;
         public const uint LevelChoice = 0x00097393; // byte, high byte of the halfword at 0x97392 (0x0115: 01 = level choice, 15 = max choice)
         public const uint LevelMaxChoice = 0x00097392; // byte
         public const uint LevelSelectState = 0x00097392; // ushort: low byte = max choice (0x15), high byte = level choice (0 = none)
+        public const uint LevelQuitState = 0x000720a9;
+        public const uint EndOfLevelScreen = 0x06f6d0;
         public const uint HasStartedGame = 0x00701659; // byte
-        public const uint LevelCoinPointCollectedCount = 0x00111728;
+
+        // area (part) ids, see AreaIds.md. Enemy memory is reused between parts, so each enemy points at the area it lives in.
+        public const uint AreaMapId = 0x000720f5; // byte, map id of the loaded part. Not unique: every part 2 and 4 is 0x7e
+        public const uint AreaSubIdA = 0x00072111; // byte, second id for Hollow Stairway, Branky Wastes, Canopy Village
+        public const uint AreaSubIdB = 0x0007210d; // byte, second id for Dungeon Tower, Spider Forest, Storm Temple
+
+        // Areas. Parts with no known map id yet (Soldier Barracks, and part 2 of Logmill/Airship/Storm Temple) are left out,
+        // so enemies there are checked without an area condition.
+        // Skull Fortress
+        public static readonly AreaState AreaSkullFortressPart1 = new AreaState(0x16);
+        public static readonly AreaState AreaSkullFortressPart2 = new AreaState(0x7e);
+        public static readonly AreaState AreaSkullFortressPart3 = new AreaState(0x3e);
+        // Hollow Stairway
+        public static readonly AreaState AreaHollowStairwayPart1 = new AreaState(0x86, Addresses.AreaSubIdA, 0x1e);
+        public static readonly AreaState AreaHollowStairwayPart2 = new AreaState(0x7e, Addresses.AreaSubIdA, 0x1e);
+        public static readonly AreaState AreaHollowStairwayPart3 = new AreaState(0x86, Addresses.AreaSubIdA, 0x5e);
+        // Dungeon Tower
+        public static readonly AreaState AreaDungeonTowerPart1 = new AreaState(0x86, Addresses.AreaSubIdB, 0x00);
+        public static readonly AreaState AreaDungeonTowerPart2 = new AreaState(0x7e, Addresses.AreaSubIdB, 0x1e);
+        public static readonly AreaState AreaDungeonTowerPart3 = new AreaState(0x86, Addresses.AreaSubIdB, 0x9e);
+        // Lost Caves
+        public static readonly AreaState AreaLostCavesPart1 = new AreaState(0x0e);
+        public static readonly AreaState AreaLostCavesPart2 = new AreaState(0x7e);
+        public static readonly AreaState AreaLostCavesPart3 = new AreaState(0xae);
+        public static readonly AreaState AreaLostCavesPart4 = new AreaState(0x7e);
+        // Fungus Grotto
+        public static readonly AreaState AreaFungusGrottoPart1 = new AreaState(0xd6);
+        public static readonly AreaState AreaFungusGrottoPart2 = new AreaState(0x7e);
+        public static readonly AreaState AreaFungusGrottoPart3 = new AreaState(0x86);
+        public static readonly AreaState AreaFungusGrottoPart4 = new AreaState(0x7e);
+        public static readonly AreaState AreaFungusGrottoPart5 = new AreaState(0x56);
+        // Acid Pools
+        public static readonly AreaState AreaAcidPoolsPart1 = new AreaState(0x6e);
+        public static readonly AreaState AreaAcidPoolsPart2 = new AreaState(0x7e);
+        // Burning Desert
+        public static readonly AreaState AreaBurningDesertPart1 = new AreaState(0xd6);
+        public static readonly AreaState AreaBurningDesertPart2 = new AreaState(0x7e);
+        public static readonly AreaState AreaBurningDesertPart3 = new AreaState(0x76);
+        public static readonly AreaState AreaBurningDesertPart4 = new AreaState(0x7e);
+        // Branky Wastes
+        public static readonly AreaState AreaBrankyWastesPart1 = new AreaState(0xce, Addresses.AreaSubIdA, 0x1e);
+        public static readonly AreaState AreaBrankyWastesPart2 = new AreaState(0x7e, Addresses.AreaSubIdA, 0x66);
+        public static readonly AreaState AreaBrankyWastesPart3 = new AreaState(0x3e, Addresses.AreaSubIdA, 0x66);
+        public static readonly AreaState AreaBrankyWastesPart4 = new AreaState(0x7e, Addresses.AreaSubIdA, 0x1e);
+        // Spider Forest
+        public static readonly AreaState AreaSpiderForestPart1 = new AreaState(0x2e, Addresses.AreaSubIdB, 0x36);
+        public static readonly AreaState AreaSpiderForestPart2 = new AreaState(0x7e, Addresses.AreaSubIdB, 0x9e);
+        public static readonly AreaState AreaSpiderForestPart3 = new AreaState(0xae, Addresses.AreaSubIdB, 0x9e);
+        // Canopy Village
+        public static readonly AreaState AreaCanopyVillagePart1 = new AreaState(0x86, Addresses.AreaSubIdA, 0x1e);
+        public static readonly AreaState AreaCanopyVillagePart2 = new AreaState(0x7e, Addresses.AreaSubIdA, 0x1e);
+        public static readonly AreaState AreaCanopyVillagePart3 = new AreaState(0x86, Addresses.AreaSubIdA, 0x66);
+        public static readonly AreaState AreaCanopyVillagePart4 = new AreaState(0x7e, Addresses.AreaSubIdA, 0x66);
+        public static readonly AreaState AreaCanopyVillagePart5 = new AreaState(0x46, Addresses.AreaSubIdA, 0x1e);
+        public static readonly AreaState AreaCanopyVillagePart6 = new AreaState(0x7e, Addresses.AreaSubIdA, 0x1e);
+        // Honcho's Logmill
+        public static readonly AreaState AreaHonchosLogmillPart1 = new AreaState(0xfe);
+        public static readonly AreaState AreaHonchosLogmillPart3 = new AreaState(0x5e);
+        // Honcho's Airship
+        public static readonly AreaState AreaHonchosAirshipPart1 = new AreaState(0xe6);
+        public static readonly AreaState AreaHonchosAirshipPart2 = new AreaState(0x7e); // assumed from "every part 2 is 0x7e", not yet confirmed in game
+        public static readonly AreaState AreaHonchosAirshipPart3 = new AreaState(0x56);
+        // Dragoon Skyfort
+        public static readonly AreaState AreaDragoonSkyfortPart1 = new AreaState(0x1e);
+        public static readonly AreaState AreaDragoonSkyfortPart2 = new AreaState(0x7e);
+        public static readonly AreaState AreaDragoonSkyfortPart3 = new AreaState(0x86);
+        // Cloud Citadel
+        public static readonly AreaState AreaCloudCitadelPart1 = new AreaState(0xe6);
+        public static readonly AreaState AreaCloudCitadelPart2 = new AreaState(0x7e);
+        public static readonly AreaState AreaCloudCitadelPart3 = new AreaState(0x86);
+        public static readonly AreaState AreaCloudCitadelPart4 = new AreaState(0x7e);
+        // Efreet Palace
+        public static readonly AreaState AreaEfreetPalacePart1 = new AreaState(0x1e);
+        public static readonly AreaState AreaEfreetPalacePart2 = new AreaState(0x7e);
+        public static readonly AreaState AreaEfreetPalacePart3 = new AreaState(0xf6);
+        // Frozen Cavern
+        public static readonly AreaState AreaFrozenCavernPart1 = new AreaState(0x56);
+        // Storm Temple
+        public static readonly AreaState AreaStormTemplePart1 = new AreaState(0xde);
+        public static readonly AreaState AreaStormTemplePart2 = new AreaState(0x7e); // assumed from "every part 2 is 0x7e", not yet confirmed in game
+        public static readonly AreaState AreaStormTemplePart3 = new AreaState(0xc6, Addresses.AreaSubIdB, 0x2e);
 
         // Enemies (EnemySanity). Each address reads as dead when it holds the value noted beside it.
         public const uint CloudCitadelPart25thSmallDude = 0x000c3ce1; // byte, dead = 0x80 (Cloud Citadel - Part 2 - 5th Small Dude)

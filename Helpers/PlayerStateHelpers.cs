@@ -9,14 +9,13 @@ namespace Helpers
     {
         public static void KillPlayer()
         {
-            //TODO: Kill the player logic goes here
+            Memory.WriteByte(Addresses.PlayerCurrentHealth, 0x00);
             Console.WriteLine("Ur ded kiddo");
         }
 
         public static void UpdatePlayerState(System.Collections.ObjectModel.ReadOnlyCollection<ItemInfo> itemsCollected)
         {
-            //TODO: Player update logic
-            Console.WriteLine("Player Status updated");
+            // for each item in itemsCollected, run it through the whole 
         }
 
         public static T GetPlayerOption<T>(Dictionary<string, object> options, string optionKey, T defaultValue = default) where T : struct, Enum
@@ -45,11 +44,28 @@ namespace Helpers
 
         public static bool UpdatePlayerMaxHealth(ArchipelagoClient client)
         {
+            byte currentMaxHealth = Memory.ReadByte(Addresses.PlayerMaxHealth);
+            int newMaxHealthTotal = currentMaxHealth + 1;
+
+            if (newMaxHealthTotal >= 8)
+            {
+                newMaxHealthTotal = 8;
+            }
+            Memory.WriteByte(Addresses.PlayerCurrentHealth, (byte)newMaxHealthTotal);
             return true;
         }
 
         public static bool UpdatePlayerCurrentHealth(ArchipelagoClient client)
         {
+            byte currentHealth = Memory.ReadByte(Addresses.PlayerCurrentHealth);
+            byte currentMaxHealth = Memory.ReadByte(Addresses.PlayerMaxHealth);
+            int newHealthTotal = currentHealth + 1;
+
+            if (newHealthTotal >= currentMaxHealth)
+            {
+                newHealthTotal = currentMaxHealth;
+            }
+            Memory.WriteByte(Addresses.PlayerCurrentHealth, (byte)newHealthTotal);
             return true;
         }
 
@@ -71,6 +87,7 @@ namespace Helpers
         {
             return true;
         }
+
         public static bool UpdatePlayerLives(ArchipelagoClient client)
         {
             byte currentLives = Memory.ReadByte(Addresses.PlayerLives);

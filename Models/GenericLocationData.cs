@@ -18,8 +18,12 @@ namespace PandemoniumArchipelago.Models
         // how the address is read when checking it (enemies use Byte, UShort or the lower Nibble)
         public LocationCheckType CheckType { get; set; }
 
-        public GenericLocationData(string name, uint locationAddress, string levelId, string check, LocationCheckType checkType = LocationCheckType.Byte, bool isChest = false, int id = 0)
+        // the part of the level this location lives in, if known. Enemy checks only count while it is active
+        public AreaState? Area { get; set; }
+
+        public GenericLocationData(string name, uint locationAddress, string levelId, string check, LocationCheckType checkType = LocationCheckType.Byte, bool isChest = false, int id = 0, AreaState? area = null)
         {
+            Area = area;
             Name = name;
             Id = id;
             Address = locationAddress;

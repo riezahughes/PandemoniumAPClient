@@ -1,4 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
+// See https://aka.ms/new-console-template for more information
 
 using System.Diagnostics;
 using System.Globalization;
@@ -19,7 +19,6 @@ using Serilog;
 public class App
 {
 
-    public static int ProcessedItemIndex = 0;
     // must match the game name in your ap world
     public const string GameName = "Pandemonium";
 
@@ -259,9 +258,9 @@ public class App
                 var overlayOptions = new OverlayOptions();
 
                 overlayOptions.XOffset = 50; // pixels from the left of the emulator window
-                overlayOptions.YOffset = 500; // pixels from the top of the emulator window
+                overlayOptions.YOffset = 160; // pixels from the top of the emulator window
                 overlayOptions.FontSize = 12;
-                overlayOptions.DefaultTextColor = Archipelago.Core.Util.Overlay.Color.Yellow;
+                overlayOptions.DefaultTextColor = Archipelago.Core.Util.Overlay.Color.White;
 
                 gameOverlay = new ToggleableOverlayService(() => new WindowsOverlayService(overlayOptions));
                 archipelagoClient.InitializeOverlayService(gameOverlay);
@@ -272,14 +271,29 @@ public class App
                 // gameOverlay.CreateFont(fontPath, 12);
             }
 
-            await archipelagoClient.ReceiveReady();
+            // Core only delivers items once told the game is ready. Wait for the game to be loaded so first-run
+            // items aren't written into memory that gets wiped, then keep retrying if delivery is halted.
+            _ = Task.Run(async () =>
+            {
+                APHelpers.NeedsItemRetry = true;
+                while (!cancellationTokenSource.Token.IsCancellationRequested)
+                {
+                    if (APHelpers.NeedsItemRetry && APHelpers.isInTheGame())
+                    {
+                        APHelpers.NeedsItemRetry = false;
+                        await archipelagoClient.ReceiveReady();
+                    }
+                    await Task.Delay(2000);
+                }
+            });
 
             firstRun = false;
 
             gameOverlay?.AddTextPopup($"{GameName} is ready to go.");
 
             GameStateHelpers.SetUpLevelSelectListener(cancellationTokenSource, archipelagoClient);
-            // GameStateHelpers.SetUpMapListener(cancellationTokenSource, archipelagoClient);
+            GameStateHelpers.SetUpMapListener(cancellationTokenSource, archipelagoClient);
+            GameStateHelpers.SetUpPointsTracker(cancellationTokenSource, archipelagoClient);
 
             // underscore runs the monitor locations task in the background. You can change _= to await if you want to watch it more directly.
             _ = archipelagoClient.MonitorLocationsAsync(GameLocations);
@@ -307,6 +321,10 @@ public class App
                 {
                     PlayerStateHelpers.UpdatePlayerState(archipelagoClient.CurrentSession.Items.AllItemsReceived);
                     Console.WriteLine($"Player state updated. Total Count: {archipelagoClient.CurrentSession.Items.AllItemsReceived.Count}");
+                }
+                else if (input?.Trim().ToLower() == "items")
+                {
+                    CliHelper.PrintItems(archipelagoClient);
                 }
                 else if (input?.Trim().ToLower() == "overlay")
                 {

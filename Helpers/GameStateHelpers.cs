@@ -44,7 +44,7 @@ namespace Helpers
             if (goalCondition == PlayerVictoryConditions.CREDITS)
             {
                 byte creditCheck = Memory.ReadByte(Addresses.CreditsAddress);
-                if(APHelpers.isInTheGame() && creditCheck == 0x10)
+                if (APHelpers.isInTheGame() && creditCheck == 0x10)
                 {
                     client.SendGoalCompletion();
                     return true;
@@ -120,6 +120,82 @@ namespace Helpers
                 }, value => value != 0x0015);
         }
 
+        // A new game wipes the memory the items were written to, so every item received so far has to be given again.
+        private static async Task ReplayReceivedItems(ArchipelagoClient client)
+        {
+            await client.ItemManager.StopReceiving();
+            // re-queue everything Core already delivered, then zero Core's saved index so it counts as new again
+            await client.ItemManager.ResetItems();
+            await client.ItemManager.ForceReloadAllItems();
+            // the loop in App.cs calls ReceiveReady() once the game is loaded and can take the items
+            APHelpers.NeedsItemRetry = true;
+        }
+
+        // Pointsanity. The game's treasure total counts up over the whole game, so the client keeps its own count for the
+        // current level: it adds every increase of the total, and starts again at 0 when the level changes. Dying keeps
+        // the count (the level id doesn't change); a game over drops the total, which just becomes the new baseline.
+        // points collected so far in the level the player is in (see SetUpPointsTracker), shown by the items command
+        public static volatile int CurrentLevelPoints = 0;
+
+        public static void SetUpPointsTracker(CancellationTokenSource cts, ArchipelagoClient client)
+        {
+            if (LocationHelpers.PointChecks.Count == 0) return;
+
+            var pending = new List<LocationHelpers.PointCheck>(LocationHelpers.PointChecks);
+
+            _ = Task.Run(async () =>
+            {
+                byte? lastLevel = null;
+                uint? lastTotal = null;
+
+                while (!cts.Token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        if (!APHelpers.isInTheGame())
+                        {
+                            // memory can't be trusted (loading, title, demo): start from a fresh baseline afterwards
+                            lastLevel = null;
+                            lastTotal = null;
+                        }
+                        else
+                        {
+                            byte level = Memory.ReadByte(Addresses.LevelId);
+                            uint total = Memory.ReadUInt(Addresses.PlayerTotalTreasureCollected);
+
+                            if (lastLevel != level || lastTotal == null)
+                            {
+                                CurrentLevelPoints = 0;
+                                lastLevel = level;
+                                lastTotal = total;
+                            }
+                            else if (total > lastTotal)
+                            {
+                                CurrentLevelPoints += (int)(total - lastTotal.Value);
+                                lastTotal = total;
+
+                                foreach (var check in pending.Where(c => c.LevelId == level && c.Points <= CurrentLevelPoints).ToList())
+                                {
+                                    await client.SendLocationAsync(new Location { Id = check.LocationId, Name = check.Name });
+                                    pending.Remove(check);
+                                }
+                            }
+                            else if (total < lastTotal)
+                            {
+                                lastTotal = total;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Points tracker failed");
+                    }
+
+                    await Task.Delay(50);
+                }
+            });
+        }
+
         public static void SetUpMapListener(CancellationTokenSource cts, ArchipelagoClient client)
         {
             if (cts.Token.IsCancellationRequested) return;
@@ -128,10 +204,32 @@ namespace Helpers
                 Addresses.HasStartedGame,
                 () =>
                 {
-                    // Console.WriteLine("Checking level");
-                    Memory.WriteByte(Addresses.LevelMaxChoice, 0x15);
-                    Thread.Sleep(1000);
-                    SetUpMapListener(cts, client);
+                    try
+                    {
+                        // set all levels to open
+                        Memory.WriteByte(Addresses.LevelMaxChoice, 0x15);
+                        // allow quitting to the hub instead of the main menu
+                        Memory.WriteByte(Addresses.LevelQuitState, 0x02);
+
+                        // give back every unlock received so far so the new game's memory matches
+                        ReplayReceivedItems(client).GetAwaiter().GetResult();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "New game setup failed");
+                    }
+                    finally
+                    {
+                        // the value stays 0 for a while, so wait for it to clear before re-arming
+                        // or the items would be replayed again straight away
+                        while (!cts.Token.IsCancellationRequested
+                               && Memory.ReadByte(Addresses.HasStartedGame) == 0x00)
+                        {
+                            Thread.Sleep(100);
+                        }
+
+                        SetUpMapListener(cts, client);
+                    }
 
                 }, value => value == 0x00);
         }

@@ -12,12 +12,15 @@ namespace Helpers
     public class APHelpers
     {
 
-        public static bool PROCESSING_ITEM_LIST = false;
+        // set when Core's item delivery was halted (game not loaded / item couldn't be applied) and needs ReceiveReady() again
+        public static volatile bool NeedsItemRetry = false;
         public static Boolean isInTheGame()
         {
             byte state = Memory.ReadByte(Addresses.BiosLoaded);
+            byte demoCheck = Memory.ReadByte(Addresses.DemoCheck);
+            uint titleScreenCheck = Memory.ReadUInt(Addresses.MainMenuCheck);
 
-            if (state == 0x80)
+            if (state == 0x80 && demoCheck == 0x0000 && titleScreenCheck > 0x0002)
             {
                 return true;
 
@@ -61,14 +64,23 @@ namespace Helpers
             }
         }
 
+        // Core tracks which items have been delivered (saved index) and calls this once per new item.
+        // Setting Success = false halts delivery until ReceiveReady() is called again.
         public static void ItemReceivedLogic(object? sender, ItemReceivedEventArgs args, ArchipelagoClient client)
         {
-            if (client.CurrentSession == null)
+            if (client.CurrentSession == null || !isInTheGame())
             {
+                args.Success = false;
+                NeedsItemRetry = true;
                 return;
             }
-            PROCESSING_ITEM_LIST = true;
-            ItemHelpers.ProcessPendingItems(client);
+
+            bool success = ItemHelpers.TryGiveItem(args.Item, client);
+            args.Success = success;
+            if (!success)
+            {
+                NeedsItemRetry = true;
+            }
         }
 
         public static void Client_MessageReceivedLogic(object? sender, MessageReceivedEventArgs e, ArchipelagoClient client, string slot)
