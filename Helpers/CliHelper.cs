@@ -35,10 +35,14 @@ namespace Helpers
 
             Console.WriteLine();
             Console.WriteLine("Levels (> = current level, break points: struck through once reached)");
-            foreach (var (keyName, levelNumber) in LocationHelpers.KeyToLevelNumber.OrderBy(entry => entry.Value))
+            // every level with an unlock item, plus the Wishing Engine which opens once both bosses are cleared
+            var levels = LocationHelpers.KeyToLevelNumber
+                .Select(entry => (Name: entry.Key.Replace(" Unlock", ""), Number: entry.Value, Unlocked: received.Any(item => item.ItemName == entry.Key)))
+                .Append((Name: "The Wishing Engine", Number: LocationHelpers.WishingEngineLevel, Unlocked: LocationHelpers.AreBossesCleared(client)))
+                .OrderBy(level => level.Number);
+
+            foreach (var (levelName, levelNumber, unlocked) in levels)
             {
-                string levelName = keyName.Replace(" Unlock", "");
-                bool unlocked = received.Any(item => item.ItemName == keyName);
                 bool isCurrent = levelNumber == currentLevel;
 
                 string line = $"{(isCurrent ? ">" : " ")} [{(unlocked ? "x" : " ")}] {levelNumber,2}. {levelName,-18}";

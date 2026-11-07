@@ -12,8 +12,8 @@ namespace Helpers
     {
         internal static bool CheckCreditsCondition(ArchipelagoClient client)
         {
-            ushort creditsFind = Memory.ReadByte(Addresses.CreditsAddress);
-            if (creditsFind == 10)
+            byte creditsFind = Memory.ReadByte(Addresses.CreditsAddress);
+            if (creditsFind == 0x10)
             {
                 return true;
             }
@@ -43,8 +43,8 @@ namespace Helpers
 
             if (goalCondition == PlayerVictoryConditions.CREDITS)
             {
-                byte creditCheck = Memory.ReadByte(Addresses.CreditsAddress);
-                if (APHelpers.isInTheGame() && creditCheck == 0x10)
+                bool creditCheck = CheckCreditsCondition(client);
+                if (APHelpers.isInTheGame() && creditCheck == true)
                 {
                     client.SendGoalCompletion();
                     return true;
@@ -65,8 +65,13 @@ namespace Helpers
             }
             else if (goalCondition == PlayerVictoryConditions.BOTH)
             {
-                Console.WriteLine("Cleared 1 and 2");
-                return true;
+                bool spellCount = CheckSpellbookPageCondition(client);
+                bool creditsCheck = CheckCreditsCondition(client);
+
+                if (spellCount == true && creditsCheck == true)
+                {
+                    return true;
+                }
             }
             return false;
         }
@@ -88,7 +93,12 @@ namespace Helpers
                         var received = client.CurrentSession?.Items.AllItemsReceived;
 
                         bool hasKey = false;
-                        if (LocationHelpers.LevelToKeyName.TryGetValue(currentLevel, out string? keyName))
+                        if (currentLevel == LocationHelpers.WishingEngineLevel)
+                        {
+                            // no unlock item: it opens once Shroom Lord and Goon Honcho are both cleared
+                            hasKey = LocationHelpers.AreBossesCleared(client);
+                        }
+                        else if (LocationHelpers.LevelToKeyName.TryGetValue(currentLevel, out string? keyName))
                         {
                             hasKey = client.CurrentSession?.Items.AllItemsReceived
                                 .Any(item => item.ItemName == keyName) ?? false;
@@ -185,6 +195,7 @@ namespace Helpers
                                 lastTotal = total;
                             }
                         }
+                        CheckGoalCondition(client);
                     }
                     catch (Exception ex)
                     {

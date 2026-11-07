@@ -96,6 +96,7 @@ namespace Helpers
             ];
 
             PointChecks.Clear();
+            ClearLocationIds.Clear();
 
             // create a new list of locations thats empty
             List<ILocation> locations = new List<ILocation>();
@@ -336,6 +337,10 @@ namespace Helpers
                             if ((isLevelClear && multiClear) || (isCharacterClear && !multiClear))
                                 continue;
 
+                            if (!ClearLocationIds.ContainsKey(region_name))
+                                ClearLocationIds[region_name] = new List<int>();
+                            ClearLocationIds[region_name].Add(locationId);
+
                             // check level id and if you're on the level cleared screen (and the character, for character clears)
                             conditionalChoice.Add(new Location()
                             {
@@ -434,6 +439,28 @@ namespace Helpers
             { "Honcho's Airship", 350 }, { "Dragoon Skyfort", 350 }, { "Cloud Citadel", 350 }, { "Efreet Palace", 350 },
             { "Frozen Cavern", 350 }, { "Storm Temple", 350 },
         };
+
+        // the Wishing Engine is level 21. It has no unlock item: it opens once both bosses have been cleared
+        public const int WishingEngineLevel = 21;
+
+        // ids of each region's active clear locations (the level clear, or the per-character clears with multiclear),
+        // filled by BuildLocationList
+        public static readonly Dictionary<string, List<int>> ClearLocationIds = new Dictionary<string, List<int>>();
+
+        // a boss counts as cleared once any of its clear locations has been checked on the server
+        private static bool IsCleared(ArchipelagoClient client, string levelName)
+        {
+            var checkedLocations = client.CurrentSession?.Locations.AllLocationsChecked;
+            if (checkedLocations == null || !ClearLocationIds.TryGetValue(levelName, out var ids))
+                return false;
+
+            return ids.Any(id => checkedLocations.Contains(id));
+        }
+
+        public static bool AreBossesCleared(ArchipelagoClient client)
+        {
+            return IsCleared(client, "Shroom Lord") && IsCleared(client, "Goon Honcho");
+        }
 
         // a pointsanity check: reaching `Points` treasure points while in the level with id `LevelId`
         public record PointCheck(byte LevelId, int Points, int LocationId, string Name);
