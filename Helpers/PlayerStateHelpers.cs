@@ -47,11 +47,14 @@ namespace Helpers
             byte currentMaxHealth = Memory.ReadByte(Addresses.PlayerMaxHealth);
             int newMaxHealthTotal = currentMaxHealth + 1;
 
-            if (newMaxHealthTotal >= 8)
+            int maxHealthContainers = GetPlayerOptionCounts(client.Options, "max_health_containers", 8);
+
+            if (newMaxHealthTotal >= maxHealthContainers)
             {
-                newMaxHealthTotal = 8;
+                newMaxHealthTotal = maxHealthContainers;
             }
-            Memory.WriteByte(Addresses.PlayerCurrentHealth, (byte)newMaxHealthTotal);
+
+            Memory.WriteByte(Addresses.PlayerMaxHealth, (byte)newMaxHealthTotal);
             return true;
         }
 

@@ -12,7 +12,7 @@ namespace PandemoniumArchipelago
         public const uint PlayerCurrentHealth = 0x0009311a;
         public const uint DemoCheck = 0x071f56;
         public const uint MainMenuCheck = 0x001fff1c;
-        public const uint PlayerMaxHealth = 0x093119; // only goes up to 8.
+        public const uint PlayerMaxHealth = 0x093119; // default game is 8, max can be anything
         public const uint PlayerLives = 0x00093118;
         public const uint PowerUpActive = 0x00093120; // byte, 01 = a power up is on, 00 = no power up
         public const uint PowerUpType = 0x00093122; // byte, 0x00 = fireball, 0x0b = freeze ray, 0x0c = shrink ray (when PowerUpActive = 01)

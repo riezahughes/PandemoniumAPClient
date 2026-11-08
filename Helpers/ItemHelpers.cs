@@ -11,7 +11,7 @@ namespace Helpers
         public static bool TryGiveItem(Item item, ArchipelagoClient client)
         {
             //// Try to handle the item based on type
-            if (item.Name.Contains("Progressive Health Upgrade"))
+            if (item.Name.Contains("Progressive Health"))
                 return PlayerStateHelpers.UpdatePlayerMaxHealth(client);
             else if (item.Name.Contains("Free Health"))
                 return PlayerStateHelpers.UpdatePlayerCurrentHealth(client);
