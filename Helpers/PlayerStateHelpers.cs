@@ -13,11 +13,6 @@ namespace Helpers
             Console.WriteLine("Ur ded kiddo");
         }
 
-        public static void UpdatePlayerState(System.Collections.ObjectModel.ReadOnlyCollection<ItemInfo> itemsCollected)
-        {
-            // for each item in itemsCollected, run it through the whole 
-        }
-
         public static T GetPlayerOption<T>(Dictionary<string, object> options, string optionKey, T defaultValue = default) where T : struct, Enum
         {
             string optionValue = options?.GetValueOrDefault(optionKey, "0").ToString();

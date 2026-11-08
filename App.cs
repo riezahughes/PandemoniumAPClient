@@ -317,11 +317,6 @@ public class App
                     string hintString = input.Trim().ToLower() == "hint" ? "!hint" : $"!hint {input.Substring(5).Trim()}";
                     _ = archipelagoClient.SendMessage(hintString);
                 }
-                else if (input?.Trim().ToLower() == "update")
-                {
-                    PlayerStateHelpers.UpdatePlayerState(archipelagoClient.CurrentSession.Items.AllItemsReceived);
-                    Console.WriteLine($"Player state updated. Total Count: {archipelagoClient.CurrentSession.Items.AllItemsReceived.Count}");
-                }
                 else if (input?.Trim().ToLower() == "items")
                 {
                     CliHelper.PrintItems(archipelagoClient);
