@@ -46,9 +46,10 @@ namespace Helpers
                 deathLink.OnDeathLinkReceived += (args) => PlayerStateHelpers.KillPlayer();
             }
 
+            // a reconnect resets max health to what has actually been unlocked
             if (isInTheGame())
             {
-                return;
+                PlayerStateHelpers.ResetPlayerMaxHealth(client);
             }
         }
 

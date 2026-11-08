@@ -164,8 +164,8 @@ namespace Helpers
                     {
                         if (!APHelpers.isInTheGame())
                         {
-                            // memory can't be trusted (loading, title, demo): start from a fresh baseline afterwards
-                            lastLevel = null;
+                            // memory can't be trusted (loading, title, demo, possibly death): take a fresh total baseline
+                            // afterwards, but remember the level so coming back to the same level keeps the count
                             lastTotal = null;
                         }
                         else
@@ -173,10 +173,16 @@ namespace Helpers
                             byte level = Memory.ReadByte(Addresses.LevelId);
                             uint total = Memory.ReadUInt(Addresses.PlayerTotalTreasureCollected);
 
-                            if (lastLevel != level || lastTotal == null)
+                            if (lastLevel != level)
                             {
+                                // a different level (or the first reading): the count starts again at 0
                                 CurrentLevelPoints = 0;
                                 lastLevel = level;
+                                lastTotal = total;
+                            }
+                            else if (lastTotal == null)
+                            {
+                                // same level after a not-in-game gap: keep the count, just re-baseline the total
                                 lastTotal = total;
                             }
                             else if (total > lastTotal)

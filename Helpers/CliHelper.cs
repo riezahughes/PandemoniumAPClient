@@ -14,7 +14,7 @@ namespace Helpers
         private const string Strike = "\u001b[9m";
         private const string StrikeOff = "\u001b[29m";
 
-        private const int BaseHearts = 2;
+        private const int BaseHearts = PlayerStateHelpers.BaseHearts;
         private const int MaxHearts = 8;
 
         // the "items" command: which levels are unlocked, how many heart upgrades are left and, when spell pages are

@@ -42,6 +42,29 @@ namespace Helpers
             return defaultValue;
         }
 
+        // the player starts with this many hearts, each "Progressive Health Upgrade" adds one
+        public const int BaseHearts = 2;
+
+        // Sets max health from scratch: base hearts + every Progressive Health Upgrade received, capped at max_health_containers.
+        // Used on (re)connect so the in-game value matches what has actually been unlocked.
+        public static void ResetPlayerMaxHealth(ArchipelagoClient client)
+        {
+            if (client.CurrentSession == null)
+            {
+                return;
+            }
+
+            int upgrades = client.CurrentSession.Items.AllItemsReceived.Count(item => item.ItemName.Contains("Progressive Health"));
+            int maxHealthContainers = GetPlayerOptionCounts(client.Options, "max_health_containers", 8);
+            if (maxHealthContainers <= 0)
+            {
+                maxHealthContainers = 8;
+            }
+
+            int maxHealth = Math.Min(BaseHearts + upgrades, maxHealthContainers);
+            Memory.WriteByte(Addresses.PlayerMaxHealth, (byte)maxHealth);
+        }
+
         public static bool UpdatePlayerMaxHealth(ArchipelagoClient client)
         {
             byte currentMaxHealth = Memory.ReadByte(Addresses.PlayerMaxHealth);
