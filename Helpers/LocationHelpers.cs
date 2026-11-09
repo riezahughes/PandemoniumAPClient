@@ -135,6 +135,8 @@ namespace Helpers
             bool multiClear = GetOption(options, "multiclear", 0) == 1;
             bool levelPercentage = GetOption(options, "level_percentage", 0) == 1;
             int percentageStep = GetOption(options, "level_percentage_range", 20);
+            // defaults to 100 so seeds generated before this option existed keep their old thresholds
+            int percentageMaxRange = GetOption(options, "level_percentage_max_range", 100);
             bool pointSanity = GetOption(options, "pointsanity", 0) == 1;
             int pointStep = GetOption(options, "pointsanity_range", 50);
 
@@ -245,11 +247,12 @@ namespace Helpers
                         if (loc.Name.Contains(" Percent Cleared: "))
                         {
                             // percentage checks only exist when level_percentage is on, and then only at the
-                            // thresholds level_percentage_range produces
+                            // thresholds level_percentage_range produces, capped at level_percentage_max_range
+                            // (or the level's own maximum if that is lower), same as the apworld
                             if (!levelPercentage)
                                 continue;
 
-                            HashSet<int> percentages = PercentageThresholds(percentageStep, MaxPercentage(region_name));
+                            HashSet<int> percentages = PercentageThresholds(percentageStep, Math.Min(percentageMaxRange, MaxPercentage(region_name)));
                             int percentage = int.Parse(loc.Check);
                             if (!percentages.Contains(percentage))
                                 continue;
