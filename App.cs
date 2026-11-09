@@ -294,6 +294,7 @@ public class App
             GameStateHelpers.SetUpLevelSelectListener(cancellationTokenSource, archipelagoClient);
             GameStateHelpers.SetUpMapListener(cancellationTokenSource, archipelagoClient);
             GameStateHelpers.SetUpPointsTracker(cancellationTokenSource, archipelagoClient);
+            GameStateHelpers.SetUpGoalTracker(cancellationTokenSource, archipelagoClient);
 
             // underscore runs the monitor locations task in the background. You can change _= to await if you want to watch it more directly.
             _ = archipelagoClient.MonitorLocationsAsync(GameLocations);
