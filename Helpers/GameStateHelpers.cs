@@ -24,9 +24,9 @@ namespace Helpers
         internal static bool CheckSpellbookPageCondition(ArchipelagoClient client)
         {
 
-            int tailCount = client.CurrentSession.Items.AllItemsReceived.Count(item => item.ItemName.Contains("Spellbook Pages"));
+            int bookCount = client.CurrentSession.Items.AllItemsReceived.Count(item => item.ItemName.Contains("Spellbook Page"));
             int maxCount = PlayerStateHelpers.GetPlayerOptionCounts(client.Options, "spellbook_pages");
-            return tailCount >= maxCount;
+            return bookCount >= maxCount;
         }
 
         public static bool CheckGoalCondition(ArchipelagoClient client)
@@ -68,12 +68,39 @@ namespace Helpers
                 bool spellCount = CheckSpellbookPageCondition(client);
                 bool creditsCheck = CheckCreditsCondition(client);
 
-                if (spellCount == true && creditsCheck == true)
+                if (APHelpers.isInTheGame() && spellCount == true && creditsCheck == true)
                 {
+                    client.SendGoalCompletion();
                     return true;
                 }
             }
             return false;
+        }
+
+        // Polls the goal in its own background task so it runs whatever other trackers are enabled.
+        // Stops once the goal has been sent so the completion isn't sent over and over.
+        public static void SetUpGoalTracker(CancellationTokenSource cts, ArchipelagoClient client)
+        {
+            _ = Task.Run(async () =>
+            {
+                while (!cts.Token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        if (CheckGoalCondition(client))
+                        {
+                            Log.Information("Goal complete, sent goal completion to the server");
+                            return;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Goal tracker failed");
+                    }
+
+                    await Task.Delay(500);
+                }
+            });
         }
 
         public static void SetUpLevelSelectListener(CancellationTokenSource cts, ArchipelagoClient client)
@@ -201,7 +228,6 @@ namespace Helpers
                                 lastTotal = total;
                             }
                         }
-                        CheckGoalCondition(client);
                     }
                     catch (Exception ex)
                     {
