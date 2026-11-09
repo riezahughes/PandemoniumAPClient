@@ -226,7 +226,10 @@ namespace Helpers
                         // set all levels to open
                         Memory.WriteByte(Addresses.LevelMaxChoice, 0x15);
                         // allow quitting to the hub instead of the main menu
-                        Memory.WriteByte(Addresses.LevelQuitState, 0x02);
+                        // (INANDOUT, bit 1)
+                        Memory.WriteBit(Addresses.CheatFlags2, 1, true);
+                        // permanent weapons (OTTOFIRE, bit 5)
+                        Memory.WriteBit(Addresses.CheatFlags1, 5, true);
 
                         // give back every unlock received so far so the new game's memory matches
                         ReplayReceivedItems(client).GetAwaiter().GetResult();

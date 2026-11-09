@@ -27,7 +27,8 @@ namespace PandemoniumArchipelago
         public const uint LevelChoice = 0x00097393; // byte, high byte of the halfword at 0x97392 (0x0115: 01 = level choice, 15 = max choice)
         public const uint LevelMaxChoice = 0x00097392; // byte
         public const uint LevelSelectState = 0x00097392; // ushort: low byte = max choice (0x15), high byte = level choice (0 = none)
-        public const uint LevelQuitState = 0x000720a9;
+        public const uint CheatFlags1 = 0x000720a8; // byte, active cheat flags [1/2]: bit 0 BORNFREE, 1 CASHDASH, 2 TOMMYBOY, 3 CORONARY, 4 VITAMINS, 5 OTTOFIRE (permanent weapons), 6 BODYSWAP, 7 HARDBODY
+        public const uint CheatFlags2 = 0x000720a9; // byte, active cheat flags [2/2]: bit 0 THETHING, 1 INANDOUT (levels quittable to Mystic Map), 2 TWISTEYE, 3 EVILDEAD
         public const uint EndOfLevelScreen = 0x06f6d0;
         public const uint HasStartedGame = 0x00701659; // byte
 
